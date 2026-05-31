@@ -1,33 +1,16 @@
 ---
 - name: Deploy example-backend
   hosts: app_servers
-  become: true
   serial: 1
 
-  vars:
-    app_dir: /opt/example-backend
-    compose_file: "{{ app_dir }}/docker-compose.yml"
-
   tasks:
-    - name: Ensure app directory exists
-      file:
-        path: "{{ app_dir }}"
-        state: directory
-        mode: "0755"
-
-    - name: Copy docker-compose file
-      copy:
-        src: ../docker-compose.yaml
-        dest: "{{ compose_file }}"
-        mode: "0644"
-
     - name: Pull new Docker image
       ansible.builtin.shell: docker pull {{ image_full }}
-      become: false
 
     - name: Update compose image and restart
-      ansible.builtin.shell: IMAGE_FULL={{ image_full }} docker compose -f {{ compose_file }} up -d
-      become: false
+      ansible.builtin.shell: IMAGE_FULL={{ image_full }} docker compose up -d
+      args:
+        chdir: "{{ repo_dir }}"
 
     - name: Wait for health check
       uri:
@@ -37,4 +20,3 @@
       until: result.status == 200
       retries: 10
       delay: 5
-

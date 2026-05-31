@@ -43,6 +43,7 @@ jobs:
             -i ansible/inventory.ini \
             ansible/deploy.yml \
             -e "image_full=${IMAGE_FULL}" \
+            -e "repo_dir=${{ github.workspace }}" \
             -e "ansible_user=${{ vars.SERVER_USER }}" \
             -e "ansible_become_password=${{ secrets.SERVER_SUDO_PASSWORD }}"
 
