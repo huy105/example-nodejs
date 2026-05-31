@@ -23,9 +23,11 @@
 
     - name: Pull new Docker image
       ansible.builtin.shell: docker pull {{ image_full }}
+      become: false
 
     - name: Update compose image and restart
       ansible.builtin.shell: IMAGE_FULL={{ image_full }} docker compose -f {{ compose_file }} up -d
+      become: false
 
     - name: Wait for health check
       uri:
