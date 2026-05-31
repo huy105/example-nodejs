@@ -21,18 +21,12 @@
         mode: "0644"
 
     - name: Pull new Docker image
-      community.docker.docker_image:
-        name: "{{ image_full }}"
-        source: pull
-        force_source: true
+      ansible.builtin.shell: docker pull {{ image_full }}
 
     - name: Update compose image and restart
-      community.docker.docker_compose_v2:
-        project_src: "{{ app_dir }}"
-        pull: never
-        state: present
-      environment:
-        IMAGE_FULL: "{{ image_full }}"
+      ansible.builtin.shell: IMAGE_FULL={{ image_full }} docker compose up -d
+      args:
+        chdir: "{{ app_dir }}"
 
     - name: Wait for health check
       uri:
