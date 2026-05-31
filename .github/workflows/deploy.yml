@@ -43,7 +43,8 @@ jobs:
             -i ansible/inventory.ini \
             ansible/deploy.yml \
             -e "image_full=${IMAGE_FULL}" \
-            -e "ansible_user=${{ vars.SERVER_USER }}"
+            -e "ansible_user=${{ vars.SERVER_USER }}" \
+            -e "ansible_become_password=${{ secrets.SERVER_SUDO_PASSWORD }}"
 
       - name: Delete SSH key from runner
         if: always()
