@@ -1,0 +1,50 @@
+name: Deploy via Ansible
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: 'Image tag (short SHA) to deploy'
+        required: true
+
+env:
+  IMAGE: giahuy105/example-nodejs
+
+jobs:
+  deploy:
+    name: Ansible Deploy
+    runs-on: self-hosted   # runner cài trên mạng nội bộ
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H ${{ vars.SERVER_HOST_1 }} >> ~/.ssh/known_hosts
+          ssh-keyscan -H ${{ vars.SERVER_HOST_2 }} >> ~/.ssh/known_hosts
+
+      - name: Write inventory
+        run: |
+          cat > ansible/inventory.ini << EOF
+          [app_servers]
+          ${{ vars.SERVER_HOST_1 }} ansible_ssh_private_key_file=~/.ssh/deploy_key
+          ${{ vars.SERVER_HOST_2 }} ansible_ssh_private_key_file=~/.ssh/deploy_key
+          EOF
+
+      - name: Run Ansible playbook
+        env:
+          IMAGE_FULL: ${{ env.IMAGE }}:${{ inputs.image_tag }}
+        run: |
+          ansible-playbook \
+            -i ansible/inventory.ini \
+            ansible/deploy.yml \
+            -e "image_full=${IMAGE_FULL}" \
+            -e "ansible_user=${{ vars.SERVER_USER }}"
+
+      - name: Delete SSH key from runner
+        if: always()
+        run: rm -f ~/.ssh/deploy_key

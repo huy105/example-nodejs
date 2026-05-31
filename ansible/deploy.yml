@@ -1,0 +1,45 @@
+---
+- name: Deploy example-backend
+  hosts: app_servers
+  become: true
+
+  vars:
+    app_dir: /opt/example-backend
+    compose_file: "{{ app_dir }}/docker-compose.yml"
+
+  tasks:
+    - name: Ensure app directory exists
+      file:
+        path: "{{ app_dir }}"
+        state: directory
+        mode: "0755"
+
+    - name: Copy docker-compose file
+      copy:
+        src: ../docker-compose.yaml
+        dest: "{{ compose_file }}"
+        mode: "0644"
+
+    - name: Pull new Docker image
+      community.docker.docker_image:
+        name: "{{ image_full }}"
+        source: pull
+        force_source: true
+
+    - name: Update compose image and restart
+      community.docker.docker_compose_v2:
+        project_src: "{{ app_dir }}"
+        pull: never
+        state: present
+      environment:
+        IMAGE_FULL: "{{ image_full }}"
+
+    - name: Wait for health check
+      uri:
+        url: "http://localhost:3000/health"
+        status_code: 200
+      register: result
+      until: result.status == 200
+      retries: 10
+      delay: 5
+
