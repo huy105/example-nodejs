@@ -29,7 +29,7 @@
 
     - name: Wait for health check
       uri:
-        url: "http://localhost:3000/health"
+        url: "http://localhost:5000/health"
         status_code: 200
       register: result
       until: result.status == 200
