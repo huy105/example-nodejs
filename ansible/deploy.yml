@@ -3,14 +3,29 @@
   hosts: app_servers
   serial: 1
 
+  vars:
+    deploy_dir: /home/{{ ansible_user }}/example-nodejs
+
   tasks:
+    - name: Ensure deploy directory exists
+      ansible.builtin.file:
+        path: "{{ deploy_dir }}"
+        state: directory
+        mode: "0777"
+
+    - name: Copy docker-compose file to server
+      ansible.builtin.copy:
+        src: "{{ repo_dir }}/docker-compose.yaml"
+        dest: "{{ deploy_dir }}/docker-compose.yaml"
+        mode: "0644"
+
     - name: Pull new Docker image
       ansible.builtin.shell: docker pull {{ image_full }}
 
     - name: Update compose image and restart
       ansible.builtin.shell: IMAGE_FULL={{ image_full }} docker compose up -d
       args:
-        chdir: "{{ repo_dir }}"
+        chdir: "{{ deploy_dir }}"
 
     - name: Wait for health check
       uri:
